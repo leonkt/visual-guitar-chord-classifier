@@ -104,7 +104,8 @@ def train_model(model, criterion, optimizer, num_epochs=25):
             else:
                 val_accuracy_list.append(epoch_acc)
                 val_loss_list.append(epoch_loss)
-    return train_accuracy_list, val_accuracy_list, train_loss_list, val_loss_list
+
+    return train_accuracy_list, val_accuracy_list, train_loss_list, val_loss_list, model
 
 def run_experiment(lr, num_unfreeze, num_epochs):
     model_conv = torchvision.models.resnet18(pretrained=True)  # download ResNet18
@@ -141,9 +142,12 @@ lr_list = [0.001, 0.0001, 0.00001]
 num_epochs = 1
 for lr in lr_list:
     for num_unfreeze in range(6):
-        train_accuracy_list, val_accuracy_list, train_loss_list, val_loss_list = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs)
+        train_accuracy_list, val_accuracy_list, train_loss_list, val_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs)
 
-        results_filename = os.path.dirname(notebook_path) + "/experiments/lr={}_num_unfroze={}_epochs={}.csv".format(lr, num_unfreeze, num_epochs)
+        results_filename = os.path.dirname(notebook_path) + "/experiments/lr={}_num_unfroze={}_epochs={}".format(lr, num_unfreeze, num_epochs)
         print (results_filename)
         results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list}
-        write_experiment_results_to_file(results_filename, results_dict)
+        write_experiment_results_to_file(results_filename + ".csv", results_dict)
+
+        ### save model to file
+        torch.save(model.state_dict(), results_filename + ".pth")
