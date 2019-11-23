@@ -150,4 +150,4 @@ for lr in lr_list:
         write_experiment_results_to_file(results_filename + ".csv", results_dict)
 
         ### save model to file
-        torch.save(model.state_dict(), results_filename + ".pth")
+        torch.save(model, results_filename + ".pth")
