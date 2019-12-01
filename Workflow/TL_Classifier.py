@@ -1,3 +1,6 @@
+# To add a new cell, type '# %%'
+# To add a new markdown cell, type '# %% [markdown]'
+# %%
 # Import relevant packages
 import torch
 import torch.nn as nn
@@ -18,9 +21,13 @@ import copy
 import warnings
 warnings.filterwarnings("ignore", category = FutureWarning)
 
+
+# %%
 # Flags
 DISABLE_CUDA = False
 
+
+# %%
 # Hyperparameters
 input_dim = 224
 train_test_ratio = 0.8
@@ -29,6 +36,8 @@ train_test_ratio = 0.8
 notebook_path = os.path.abspath("TL_Classifier.ipynb")
 data_path = os.path.dirname(notebook_path) + '/Official Dataset/'
 
+
+# %%
 # Select accelerator device
 def get_default_device():
     if not DISABLE_CUDA and torch.cuda.is_available():
@@ -39,12 +48,14 @@ def get_default_device():
         return torch.device('cpu'), False
 device, using_cuda = get_default_device()
 
+
+# %%
 # Transform the data
 transform = transforms.Compose([
                     transforms.Resize((input_dim, input_dim)),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
-                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 # Create training/testing dataloaders
@@ -57,21 +68,25 @@ train_set, val_set, test_set = torch.utils.data.random_split(full_set, [train_si
 dataset_sizes = {'train': train_size,
                  'val': val_size,
                  'test': test_size}
-dataloaders = {'train': torch.utils.data.DataLoader(train_set, shuffle=True, batch_size=4),
-               'val': torch.utils.data.DataLoader(val_set, shuffle=True, batch_size=4),
-               'test': torch.utils.data.DataLoader(test_set, shuffle=True, batch_size=4)}
+dataloaders = {'train': torch.utils.data.DataLoader(train_set, shuffle=True, batch_size=1),
+               'val': torch.utils.data.DataLoader(val_set, shuffle=True, batch_size=1),
+               'test': torch.utils.data.DataLoader(test_set, shuffle=True, batch_size=1)}
 
 class_names = full_set.classes
 print (class_names)
 
-def train_model(model, criterion, optimizer, num_epochs=25):
+
+# %%
+def train_model(model, criterion, optimizer, num_epochs=20):
     train_accuracy_list = []
     val_accuracy_list = []
+    test_accuracy_list = []
     train_loss_list = []
     val_loss_list = []
+    test_loss_list = []
 
     for epoch in range(num_epochs):
-        for phase in ['train', 'val']:
+        for phase in ['train', 'val', 'test']:
             if phase == 'train':
                 model.train()  # Set model to training mode
             else:
@@ -92,21 +107,25 @@ def train_model(model, criterion, optimizer, num_epochs=25):
                     if phase == 'train':  # backward + optimize only if in training phase
                         loss.backward()
                         optimizer.step()
-                running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                running_loss += loss.item() 
+                running_corrects += (preds == labels.data).sum().item()
 
             epoch_loss = running_loss / dataset_sizes[phase]
-            epoch_acc = running_corrects.double() / dataset_sizes[phase]
+            epoch_acc = running_corrects / dataset_sizes[phase]
 
             if phase == 'train':
                 train_accuracy_list.append(epoch_acc)
                 train_loss_list.append(epoch_loss)
-            else:
+            elif phase == 'val':
                 val_accuracy_list.append(epoch_acc)
                 val_loss_list.append(epoch_loss)
+            else:
+                test_accuracy_list.append(epoch_acc)
+                test_loss_list.append(epoch_loss)               
+    return train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model
 
-    return train_accuracy_list, val_accuracy_list, train_loss_list, val_loss_list, model
 
+# %%
 def run_experiment(lr, num_unfreeze, num_epochs):
     model_conv = torchvision.models.resnet18(pretrained=True)  # download ResNet18
     for i, param in enumerate(model_conv.parameters()):
@@ -125,6 +144,8 @@ def run_experiment(lr, num_unfreeze, num_epochs):
 
     return train_model(model_conv, criterion, optimizer_conv, num_epochs)
 
+
+# %%
 import csv
 
 def write_experiment_results_to_file(filename, results_dict):
@@ -138,16 +159,22 @@ def write_experiment_results_to_file(filename, results_dict):
                 row.append(float(results_dict[key][i]))
             writer.writerow(row)
 
+
+# %%
 lr_list = [0.001, 0.0001, 0.00001]
-num_epochs = 1
+num_epochs = 25
 for lr in lr_list:
     for num_unfreeze in range(6):
-        train_accuracy_list, val_accuracy_list, train_loss_list, val_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs)
+        train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs)
 
-        results_filename = os.path.dirname(notebook_path) + "/experiments/lr={}_num_unfroze={}_epochs={}".format(lr, num_unfreeze, num_epochs)
-        print (results_filename)
-        results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list}
-        write_experiment_results_to_file(results_filename + ".csv", results_dict)
+        model_filename = os.path.dirname(notebook_path) + "/experiments/models/lr={}_num_unfroze={}_epochs={}.pth".format(lr, num_unfreeze, num_epochs)
+        torch.save(model, model_filename)
 
-        ### save model to file
-        torch.save(model, results_filename + ".pth")
+        results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/lr={}_num_unfroze={}_epochs={}.csv".format(lr, num_unfreeze, num_epochs)
+        results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
+        write_experiment_results_to_file(results_filename, results_dict)
+
+
+# %%
+
+
