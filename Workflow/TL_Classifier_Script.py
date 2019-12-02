@@ -54,6 +54,7 @@ device, using_cuda = get_default_device()
 transform = transforms.Compose([
                     transforms.Resize((input_dim, input_dim)),
                     transforms.RandomHorizontalFlip(),
+                    transforms.RandomRotation(30),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
@@ -77,13 +78,15 @@ print (class_names)
 
 
 # %%
-def train_model(model, criterion, optimizer, num_epochs=20):
+def train_model(model, criterion, optimizer, num_epochs, model_path):
     train_accuracy_list = []
     val_accuracy_list = []
     test_accuracy_list = []
     train_loss_list = []
     val_loss_list = []
     test_loss_list = []
+
+    max_test_acc = float("-inf")
 
     for epoch in range(num_epochs):
         for phase in ['train', 'val', 'test']:
@@ -120,29 +123,32 @@ def train_model(model, criterion, optimizer, num_epochs=20):
                 val_accuracy_list.append(epoch_acc)
                 val_loss_list.append(epoch_loss)
             else:
+                if epoch_acc > max_test_acc:
+                    max_test_acc = epoch_acc
+                    torch.save(model, model_path)
                 test_accuracy_list.append(epoch_acc)
                 test_loss_list.append(epoch_loss)               
     return train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model
 
 
 # %%
-def run_experiment(lr, num_unfreeze, num_epochs):
+def run_experiment(lr, num_unfreeze, num_epochs, weight_decay, model_filename):
     model_conv = torchvision.models.resnet18(pretrained=True)  # download ResNet18
     for i, param in enumerate(model_conv.parameters()):
         if i < 60 - num_unfreeze:  
             param.requires_grad = False
 
     num_ftrs = model_conv.fc.in_features
-    model_conv.fc = nn.Linear(num_ftrs, 1024) 
-    model_conv.fc2 = nn.Linear(1024, 32) 
+    model_conv.fc = nn.Linear(num_ftrs, 64) 
+    model_conv.fc2 = nn.Linear(64, 32) 
     model_conv.fc3 = nn.Linear(32, 5)
 
     model_conv = model_conv.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer_conv = optim.Adam(filter(lambda p: p.requires_grad, model_conv.parameters()), lr=lr)
+    optimizer_conv = optim.Adam(filter(lambda p: p.requires_grad, model_conv.parameters()), lr=lr, weight_decay=weight_decay)
 
-    return train_model(model_conv, criterion, optimizer_conv, num_epochs)
+    return train_model(model_conv, criterion, optimizer_conv, num_epochs, model_filename)
 
 
 # %%
@@ -162,17 +168,16 @@ def write_experiment_results_to_file(filename, results_dict):
 
 # %%
 lr_list = [0.001, 0.0001, 0.00001]
-num_epochs = 25
+num_epochs = 1
 for lr in lr_list:
-    for num_unfreeze in range(6):
-        train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs)
+    for num_unfreeze in range(3):
+        for wd in [0, 1e-5]:
+            model_filename = os.path.dirname(notebook_path) + "/experiments/models/lr={}_num_unfroze={}_epochs={}_wd={}.pth".format(lr, num_unfreeze, num_epochs, wd)
+            train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs, weight_decay=wd, model_filename=model_filename)
 
-        model_filename = os.path.dirname(notebook_path) + "/experiments/models/lr={}_num_unfroze={}_epochs={}.pth".format(lr, num_unfreeze, num_epochs)
-        torch.save(model, model_filename)
-
-        results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/lr={}_num_unfroze={}_epochs={}.csv".format(lr, num_unfreeze, num_epochs)
-        results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
-        write_experiment_results_to_file(results_filename, results_dict)
+            results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/lr={}_num_unfroze={}_epochs={}_wd={}.csv".format(lr, num_unfreeze, num_epochs, wd)
+            results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
+            write_experiment_results_to_file(results_filename, results_dict)
 
 
 # %%
