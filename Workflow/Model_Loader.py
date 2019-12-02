@@ -44,7 +44,7 @@ transform = transforms.Compose([
                     transforms.Resize((input_dim, input_dim)),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
-                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 # Create training/testing dataloaders
@@ -76,7 +76,7 @@ def imshow(inp, title=None):
     plt.imshow(inp)
     if title is not None:
         plt.title(title)
-    plt.pause(0.001)  # pause a bit so that plots are updated
+    plt.show()
 
 def visualize_model(model, num_images=6):
     was_training = model.training
@@ -104,6 +104,8 @@ def visualize_model(model, num_images=6):
                     return
         model.train(mode=was_training)
 
-model = torch.load(os.path.dirname(notebook_path) + '/experiments/lr=0.001_num_unfroze=0_epochs=1.pth')
+########################################################################################################
+
+model = torch.load(os.path.dirname(notebook_path) + '/experiments/models/lr=0.001_num_unfroze=0_epochs=1.pth')
 model.eval()
 visualize_model(model)
