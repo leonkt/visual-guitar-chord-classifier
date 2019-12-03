@@ -133,7 +133,8 @@ def train_model(model, criterion, optimizer, num_epochs, model_path):
 
 # %%
 def run_experiment(lr, num_unfreeze, num_epochs, weight_decay, model_filename):
-    model_conv = torchvision.models.resnet18(pretrained=True)  # download ResNet18
+    # model_conv = torchvision.models.resnet18(pretrained=True)  # download ResNet18
+    model_conv = torchvision.models.googlenet(pretrained=True)  # download GoogLeNet
     for i, param in enumerate(model_conv.parameters()):
         if i < 60 - num_unfreeze:  
             param.requires_grad = False
@@ -179,16 +180,17 @@ def write_experiment_results_to_file(filename, results_dict):
 #             results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
 #             write_experiment_results_to_file(results_filename, results_dict)
 
-num_epochs = 500
-num_unfreeze = 2
-lr = 0.0001
-wd = 1e-5
-            model_filename = os.path.dirname(notebook_path) + "/experiments/models/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED.pth".format(lr, num_unfreeze, num_epochs, wd)
-            train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs, weight_decay=wd, model_filename=model_filename)
+num_epochs = 1
+num_unfreeze = 1
+lr = 0.001
+wd = 0
 
-            results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED.csv".format(lr, num_unfreeze, num_epochs, wd)
-            results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
-            write_experiment_results_to_file(results_filename, results_dict)
+model_filename = os.path.dirname(notebook_path) + "/experiments/models/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED_NOADD.pth".format(lr, num_unfreeze, num_epochs, wd)
+train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs, weight_decay=wd, model_filename=model_filename)
+
+results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED_NOADD.csv".format(lr, num_unfreeze, num_epochs, wd)
+results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
+write_experiment_results_to_file(results_filename, results_dict)
 
 # %%
 
