@@ -70,8 +70,8 @@ dataset_sizes = {'train': train_size,
                  'val': val_size,
                  'test': test_size}
 dataloaders = {'train': torch.utils.data.DataLoader(train_set, shuffle=True, batch_size=1),
-               'val': torch.utils.data.DataLoader(val_set, shuffle=True, batch_size=1),
-               'test': torch.utils.data.DataLoader(test_set, shuffle=True, batch_size=1)}
+               'val': torch.utils.data.DataLoader(val_set, shuffle=False, batch_size=1),
+               'test': torch.utils.data.DataLoader(test_set, shuffle=False, batch_size=1)}
 
 class_names = full_set.classes
 print (class_names)
@@ -180,17 +180,6 @@ def write_experiment_results_to_file(filename, results_dict):
 #             results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
 #             write_experiment_results_to_file(results_filename, results_dict)
 
-num_epochs = 1
-num_unfreeze = 1
-lr = 0.001
-wd = 0
-
-model_filename = os.path.dirname(notebook_path) + "/experiments/models/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED_NOADD.pth".format(lr, num_unfreeze, num_epochs, wd)
-train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs, weight_decay=wd, model_filename=model_filename)
-
-results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED_NOADD.csv".format(lr, num_unfreeze, num_epochs, wd)
-results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
-write_experiment_results_to_file(results_filename, results_dict)
 
 # %%
 
