@@ -183,7 +183,7 @@ def write_experiment_results_to_file(filename, results_dict):
 
 # %%
 lr_list = [0.001, 0.0001]
-num_epochs = 100
+num_epochs = 50
 for lr in lr_list:
     for num_unfreeze in range(3):
         for wd in [0, 1e-5]:
