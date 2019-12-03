@@ -35,7 +35,7 @@ train_test_ratio = 0.8
 
 # Declare important file paths
 notebook_path = os.path.abspath("TL_Classifier.ipynb")
-data_path = os.path.dirname(notebook_path) + '/Colored Dataset/'
+data_path = os.path.dirname(notebook_path) + '/Official Dataset/'
 
 
 # %%
@@ -57,7 +57,7 @@ transform = transforms.Compose([
                     transforms.RandomHorizontalFlip(),
                     transforms.RandomRotation(30),
                     transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 # Create training/testing dataloaders
@@ -118,8 +118,8 @@ def train_model(model, criterion, optimizer, num_epochs, model_path, confusion_m
                 running_corrects += (preds == labels.data).sum().item()
 
                 if phase == 'test':
-                    predlist.append(preds.numpy()[0])
-                    lbllist.append(labels.data.numpy()[0])
+                    predlist.append(preds.cpu().numpy()[0])
+                    lbllist.append(labels.data.cpu().numpy()[0])
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
@@ -136,7 +136,7 @@ def train_model(model, criterion, optimizer, num_epochs, model_path, confusion_m
                     torch.save(model, model_path)
 
                     rows = zip(predlist,lbllist)
-                    with open(confusion_matrix, "w") as f:
+                    with open(confusion_matrix, "w+") as f:
                         writer = csv.writer(f)
                         for row in rows:
                             writer.writerow(row)
@@ -187,11 +187,11 @@ num_epochs = 50
 for lr in lr_list:
     for num_unfreeze in range(3):
         for wd in [0, 1e-5]:
-            model_filename = os.path.dirname(notebook_path) + "/experiments/models/GoogLeNet/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED.pth".format(lr, num_unfreeze, num_epochs, wd)
-            confusion_matrix = os.path.dirname(notebook_path) + "/experiments/models/GoogLeNet/conf_mat/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED.csv".format(lr, num_unfreeze, num_epochs, wd)
+            model_filename = os.path.dirname(notebook_path) + "/experiments/models/GoogLeNet/lr={}_num_unfroze={}_epochs={}_wd={}.pth".format(lr, num_unfreeze, num_epochs, wd)
+            confusion_matrix = os.path.dirname(notebook_path) + "/experiments/csv_files/GoogLeNet/conf_mat/lr={}_num_unfroze={}_epochs={}_wd={}.csv".format(lr, num_unfreeze, num_epochs, wd)
             train_accuracy_list, val_accuracy_list, test_accuracy_list, train_loss_list, val_loss_list, test_loss_list, model = run_experiment(lr=lr, num_unfreeze=num_unfreeze, num_epochs=num_epochs, weight_decay=wd, model_filename=model_filename, confusion_matrix=confusion_matrix)
 
-            results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/GoogLeNet/lr={}_num_unfroze={}_epochs={}_wd={}_COLORED.csv".format(lr, num_unfreeze, num_epochs, wd)
+            results_filename = os.path.dirname(notebook_path) + "/experiments/csv_files/GoogLeNet/lr={}_num_unfroze={}_epochs={}_wd={}.csv".format(lr, num_unfreeze, num_epochs, wd)
             results_dict = {"train_accuracy": train_accuracy_list, "val_accuracy": val_accuracy_list, "test_accuracy": test_accuracy_list, "train_loss": train_loss_list, "val_loss": val_loss_list, "test_loss": test_loss_list}
             write_experiment_results_to_file(results_filename, results_dict)
 
