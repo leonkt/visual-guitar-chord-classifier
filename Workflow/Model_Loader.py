@@ -107,7 +107,7 @@ def visualize_model(model, num_images=6):
 
 ########################################################################################################
 
-model = torch.load(os.path.dirname(notebook_path) + '/experiments/models/lr=0.001_num_unfroze=0_epochs=1_wd=0_COLORED_NOADD.pth', map_location=device)
+model = torch.load(os.path.dirname(notebook_path) + '/experiments/models/GoogLeNet/lr=0.001_num_unfroze=1_epochs=2_wd=1e-05_COLORED.pth', map_location=device)
 model.eval()
 # visualize_model(model)
 
@@ -145,19 +145,22 @@ import seaborn as sn
 import pandas as pd
 import numpy as np 
 
-predlist = []
-lbllist = []
+# predlist = []
+# lbllist = []
 
-with torch.no_grad():
-    for i, (inputs, classes) in enumerate(dataloaders['test']):
-        inputs = inputs.to(device)
-        classes = classes.float().numpy()[0]
-        outputs = model(inputs)
-        _, preds = torch.max(outputs, 1)
+# with torch.no_grad():
+#     for i, (inputs, classes) in enumerate(dataloaders['test']):
+#         inputs = inputs.to(device)
+#         classes = classes.float().numpy()[0]
+#         outputs = model(inputs)
+#         _, preds = torch.max(outputs, 1)
+
         
-        # Append batch prediction results
-        predlist.append(preds)
-        lbllist.append(classes)
+#         # Append batch prediction results
+#         predlist.append(preds)
+#         lbllist.append(classes)
+
+predlist, lbllist = np.loadtxt(os.path.dirname(notebook_path) + '/experiments/csv_files/GoogLeNet/conf_mat/lr=0.001_num_unfroze=1_epochs=2_wd=0_COLORED.csv', delimiter=',', usecols=(0, 1), unpack=True)
 
 # Confusion matrix
 print (lbllist)
