@@ -70,10 +70,10 @@ print (class_names)
 def imshow(inp, title=None):
     """Imshow for Tensor."""
     inp = inp.numpy().transpose((1, 2, 0))
-    # mean = np.array([0.485, 0.456, 0.406])
-    # std = np.array([0.229, 0.224, 0.225])
-    # inp = std * inp + mean
-    # inp = np.clip(inp, 0, 1)
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    inp = std * inp + mean
+    inp = np.clip(inp, 0, 1)
     plt.imshow(inp)
     if title is not None:
         plt.title(title)
@@ -107,7 +107,7 @@ def visualize_model(model, num_images=6):
 
 ########################################################################################################
 
-model = torch.load(os.path.dirname(notebook_path) + '/experiments/models/GoogLeNet/lr=0.001_num_unfroze=1_epochs=2_wd=1e-05_COLORED.pth', map_location=device)
+model = torch.load(os.path.dirname(notebook_path) + '/experiments/models/ResNet/lr=0.001_num_unfroze=2_epochs=100_wd=0_COLORED.pth', map_location=device)
 model.eval()
 # visualize_model(model)
 
@@ -133,10 +133,8 @@ model.eval()
 # backprop = Backprop(model)
 # model.eval()
 # transformed = apply_transforms(image)
-# backprop.visualize(transformed, 0, guided=True)
+# backprop.visualize(transformed, 0, guided=True, alpha=0.8)
 # plt.show()
-
-
 
 ########################################################################################################
 from sklearn.metrics import confusion_matrix
@@ -145,22 +143,22 @@ import seaborn as sn
 import pandas as pd
 import numpy as np 
 
-# predlist = []
-# lbllist = []
+predlist = []
+lbllist = []
 
-# with torch.no_grad():
-#     for i, (inputs, classes) in enumerate(dataloaders['test']):
-#         inputs = inputs.to(device)
-#         classes = classes.float().numpy()[0]
-#         outputs = model(inputs)
-#         _, preds = torch.max(outputs, 1)
+with torch.no_grad():
+    for i, (inputs, classes) in enumerate(dataloaders['test']):
+        inputs = inputs.to(device)
+        classes = classes.float().numpy()[0]
+        outputs = model(inputs)
+        _, preds = torch.max(outputs, 1)
 
         
-#         # Append batch prediction results
-#         predlist.append(preds)
-#         lbllist.append(classes)
+        # Append batch prediction results
+        predlist.append(preds)
+        lbllist.append(classes)
 
-predlist, lbllist = np.loadtxt(os.path.dirname(notebook_path) + '/experiments/csv_files/GoogLeNet/conf_mat/lr=0.001_num_unfroze=1_epochs=2_wd=0_COLORED.csv', delimiter=',', usecols=(0, 1), unpack=True)
+# predlist, lbllist = np.loadtxt(os.path.dirname(notebook_path) + '/experiments/csv_files/GoogLeNet/conf_mat/lr=0.0001_num_unfroze=0_epochs=50_wd=0_COLORED.csv', delimiter=',', usecols=(0, 1), unpack=True)
 
 # Confusion matrix
 print (lbllist)
